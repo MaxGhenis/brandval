@@ -1,45 +1,18 @@
 {
   "name": "namecast",
-  "version": "0.2.0",
-  "description": "AI-powered brand name oracle - generate, filter, and evaluate brand names with domain checks, social handles, similar companies, and perception analysis",
+  "version": "0.3.0",
+  "description": "AI-powered brand name oracle - generate, filter, and evaluate brand names with domain checks, social handles, similar companies, and dynamic persona perception analysis",
   "homepage": "https://github.com/MaxGhenis/namecast",
   "commands": [
     {
       "name": "find",
-      "description": "Generate and evaluate brand names: /find <project description>",
+      "description": "Generate and evaluate brand names: /find <project description> [--ideas name1,name2]",
       "path": "commands/find.md"
     },
     {
       "name": "evaluate",
-      "description": "Evaluate a single brand name: /evaluate <name>",
+      "description": "Evaluate a brand name: /evaluate <name> [--mission description]",
       "path": "commands/evaluate.md"
-    }
-  ],
-  "agents": [
-    {
-      "name": "persona-sarah",
-      "description": "Sarah persona (28yo Software Engineer) for brand perception analysis",
-      "path": "agents/persona-sarah.md"
-    },
-    {
-      "name": "persona-robert",
-      "description": "Robert persona (55yo Small Business Owner) for brand perception analysis",
-      "path": "agents/persona-robert.md"
-    },
-    {
-      "name": "persona-maya",
-      "description": "Maya persona (34yo Marketing Director) for brand perception analysis",
-      "path": "agents/persona-maya.md"
-    },
-    {
-      "name": "persona-james",
-      "description": "James persona (42yo Investor) for brand perception analysis",
-      "path": "agents/persona-james.md"
-    },
-    {
-      "name": "persona-lisa",
-      "description": "Lisa persona (22yo College Student) for brand perception analysis",
-      "path": "agents/persona-lisa.md"
     }
   ]
 }

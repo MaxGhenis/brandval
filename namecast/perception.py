@@ -1,4 +1,4 @@
-"""AI-powered brand perception forecasting with multiple personas."""
+"""AI-powered brand perception forecasting with dynamic personas."""
 
 import json
 from dataclasses import dataclass
@@ -16,6 +16,8 @@ class PersonaResponse:
     industry_guess: str
     would_trust: bool
     memorable: bool
+    memorability_score: int  # 1-10
+    professionalism_score: int  # 1-10
     explanation: str
 
 
@@ -27,12 +29,14 @@ class PerceptionAnalysis:
     memorability: str
     persona_responses: list[PersonaResponse]
     consensus_score: float  # 0-1, how much personas agree
+    avg_memorability: float  # 1-10 average
+    avg_professionalism: float  # 1-10 average
     mission_alignment: Optional[float] = None
     mission_explanation: Optional[str] = None
 
 
-# Diverse personas for brand perception testing
-PERSONAS = [
+# Default personas (used when no mission provided)
+DEFAULT_PERSONAS = [
     {
         "name": "Sarah",
         "age": 28,
@@ -66,6 +70,57 @@ PERSONAS = [
 ]
 
 
+def generate_dynamic_personas(mission: str, client: Anthropic) -> list[dict]:
+    """Generate personas dynamically based on the company mission/description."""
+
+    prompt = f"""Based on this company description, identify 5 specific personas who would interact with this brand:
+
+Company: {mission}
+
+Consider:
+- Primary customers/users
+- Decision makers who would purchase
+- Potential investors
+- Industry experts/analysts
+- End consumers if B2C
+
+For each persona, provide:
+- A realistic first name
+- Age (be specific)
+- Occupation/role
+- Brief background relevant to why they'd encounter this brand
+
+Respond in JSON format:
+[
+    {{"name": "...", "age": 35, "occupation": "...", "background": "..."}},
+    ...
+]
+
+Make personas diverse in age, role, and perspective. Be specific and realistic.
+Respond ONLY with valid JSON array."""
+
+    try:
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=800,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        text = response.content[0].text.strip()
+        # Handle markdown code blocks
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+            text = text.strip()
+
+        personas = json.loads(text)
+        return personas
+    except Exception as e:
+        print(f"Error generating dynamic personas: {e}")
+        return DEFAULT_PERSONAS
+
+
 def analyze_with_personas(
     name: str,
     mission: Optional[str] = None,
@@ -74,13 +129,19 @@ def analyze_with_personas(
     """
     Forecast brand perception using multiple AI personas.
 
-    Get diverse oracle predictions on how different demographics
-    will perceive the brand name.
+    If a mission is provided, generates dynamic personas tailored to the
+    company's target audience. Otherwise uses default diverse personas.
     """
     client = Anthropic()
-    responses = []
 
-    for persona in PERSONAS[:num_personas]:
+    # Generate dynamic personas if mission provided, otherwise use defaults
+    if mission:
+        personas = generate_dynamic_personas(mission, client)[:num_personas]
+    else:
+        personas = DEFAULT_PERSONAS[:num_personas]
+
+    responses = []
+    for persona in personas:
         response = _query_persona(client, name, persona, mission)
         if response:
             responses.append(response)
@@ -113,6 +174,8 @@ Answer these questions from {persona['name']}'s perspective in JSON format:
     "industry_guess": "What industry/type of company would you guess this is?",
     "would_trust": true/false - Would you trust a company with this name?,
     "memorable": true/false - Is this name memorable to you?,
+    "memorability_score": 1-10 rating of how memorable this name is,
+    "professionalism_score": 1-10 rating of how professional/credible this sounds,
     "explanation": "Brief explanation of your overall impression (2-3 sentences)"
 }}
 
@@ -135,6 +198,8 @@ Respond ONLY with valid JSON, no other text."""
             industry_guess=result.get("industry_guess", ""),
             would_trust=result.get("would_trust", True),
             memorable=result.get("memorable", True),
+            memorability_score=result.get("memorability_score", 5),
+            professionalism_score=result.get("professionalism_score", 5),
             explanation=result.get("explanation", ""),
         )
     except Exception as e:
@@ -158,11 +223,17 @@ def _aggregate_responses(
             memorability="high",
             persona_responses=[],
             consensus_score=0.0,
+            avg_memorability=5.0,
+            avg_professionalism=5.0,
         )
 
     # Collect all evocations and industries
     all_evokes = [r.evokes for r in responses]
     all_industries = [r.industry_guess for r in responses]
+
+    # Calculate averages
+    avg_memorability = sum(r.memorability_score for r in responses) / len(responses)
+    avg_professionalism = sum(r.professionalism_score for r in responses) / len(responses)
 
     # Calculate consensus
     trust_rate = sum(1 for r in responses if r.would_trust) / len(responses)
@@ -170,9 +241,9 @@ def _aggregate_responses(
     consensus_score = (trust_rate + memorable_rate) / 2
 
     # Determine memorability category
-    if memorable_rate >= 0.8:
+    if avg_memorability >= 7:
         memorability = "high"
-    elif memorable_rate >= 0.5:
+    elif avg_memorability >= 5:
         memorability = "medium"
     else:
         memorability = "low"
@@ -203,6 +274,8 @@ Synthesize into a single 1-2 sentence summary of what this name evokes. Be speci
         memorability=memorability,
         persona_responses=responses,
         consensus_score=consensus_score,
+        avg_memorability=avg_memorability,
+        avg_professionalism=avg_professionalism,
     )
 
     # Mission alignment if provided

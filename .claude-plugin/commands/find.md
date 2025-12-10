@@ -10,28 +10,66 @@ arguments:
     required: false
 ---
 
-Find and evaluate brand names for: "$ARGUMENTS.description"
+# Find Brand Names for: $ARGUMENTS.description
 
 User's name ideas: $ARGUMENTS.ideas
 
-Run the namecast CLI to execute the workflow. If the user provided name ideas, include them with --ideas flags (one per name).
+## Your Task
 
-Example commands:
-- Without ideas: `namecast find "A SaaS tool for carbon tracking" --json`
-- With ideas: `namecast find "A SaaS tool for carbon tracking" --ideas Carbly --ideas GreenTrack --json`
+Help find the best brand name by doing the following natively (no CLI needed):
 
-The workflow will:
-1. Add user's name ideas (if provided)
-2. Generate additional AI name suggestions
-3. Check domain availability (.com and .io)
-4. Filter out names without available domains
-5. Fully evaluate the top candidates
-6. Recommend the best name
+### 1. Identify Target Audience Personas
+Based on the project description, identify 5 relevant personas who would interact with this brand:
+- Consider: customers, users, investors, partners, employees
+- Make them specific: age, role, industry, values, tech-savviness
+- These should be realistic people who would actually encounter this brand
 
-Present the results in a clear summary showing:
-- Total candidates (user + generated)
-- How many passed domain filtering
-- The recommended name with its score
-- A table of all candidates with their domain status and scores
+Example for a B2B SaaS: CFO (50s, enterprise), Startup founder (30s), Developer (25), VC partner (40s), Industry analyst (45)
+Example for consumer app: College student (20), Working parent (35), Retiree (65), Influencer (25), Small business owner (40)
 
-If namecast is not installed, suggest: `pip install namecast`
+### 2. Generate Candidates
+- Start with any user-provided ideas (from the --ideas argument, comma-separated)
+- Generate 5-10 additional name suggestions based on the project description
+- Names should be short (1-2 words), memorable, easy to spell/pronounce
+
+### 3. Check Domain Availability
+For each candidate, use WebFetch to check if domains are available:
+- Check `https://who.is/whois/{name}.com` - if it shows registration dates, it's taken; if "NOT FOUND" or no registrant, it's available
+- Check `https://who.is/whois/{name}.io` - same logic
+
+Filter out names where BOTH .com and .io are taken.
+
+### 4. Evaluate Top Candidates with Dynamic Personas
+For the top 3-5 candidates with available domains, evaluate perception from each persona you identified.
+
+For each name, roleplay as each persona and provide:
+- Memorability rating (1-10)
+- Professionalism/credibility rating (1-10)
+- One-sentence gut reaction
+- Would they trust/use a company with this name? (yes/maybe/no)
+
+### 5. Score and Recommend
+For each evaluated name, calculate a score (0-100) based on:
+- Domain availability (40 pts): .com available = 40, only .io = 25, neither = 0
+- Persona ratings (40 pts): Average of memorability + professionalism across personas, scaled to 40
+- Linguistic quality (20 pts): Pronunciation ease, international safety, uniqueness
+
+### 6. Present Results
+
+**Target Audience Personas:**
+1. [Persona 1 - brief description]
+2. [Persona 2 - brief description]
+... etc
+
+**Pipeline:** X candidates → Y with available domains → Z evaluated
+
+| Rank | Name | Source | .com | .io | Persona Avg | Score |
+|------|------|--------|------|-----|-------------|-------|
+
+**Recommendation:** [Top name]
+- Why it won
+- Key persona feedback highlights
+
+**Runner-up:** [Second name] - brief note on why it's a good alternative
+
+**Disclaimer:** This is general information, not legal advice. Consult a trademark attorney before finalizing your brand name.
