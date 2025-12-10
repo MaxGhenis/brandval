@@ -1,18 +1,8 @@
 {
   "name": "namecast",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "AI-powered brand name oracle - generate, filter, and evaluate brand names with domain checks, social handles, similar companies, and dynamic persona perception analysis",
-  "homepage": "https://github.com/MaxGhenis/namecast",
-  "commands": [
-    {
-      "name": "find",
-      "description": "Generate and evaluate brand names: /find <project description> [--ideas name1,name2]",
-      "path": "commands/find.md"
-    },
-    {
-      "name": "evaluate",
-      "description": "Evaluate a brand name: /evaluate <name> [--mission description]",
-      "path": "commands/evaluate.md"
-    }
-  ]
+  "author": {
+    "name": "Max Ghenis"
+  }
 }

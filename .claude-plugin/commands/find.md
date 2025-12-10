@@ -1,18 +1,13 @@
 ---
-name: find
-description: "Generate and evaluate brand names: /find <description> [--ideas idea1,idea2]"
-arguments:
-  - name: description
-    description: Description of the project, company, or product
-    required: true
-  - name: ideas
-    description: Your name ideas (comma-separated)
-    required: false
+description: "Generate and evaluate brand names for a project"
+argument-hint: "<description> [ideas: name1, name2, ...]"
 ---
 
-# Find Brand Names for: $ARGUMENTS.description
+# Find Brand Names
 
-User's name ideas: $ARGUMENTS.ideas
+Parse the user input to extract:
+- **Description**: The project/company description
+- **Ideas**: Any user-provided name ideas (look for "ideas:" prefix or comma-separated names at the end)
 
 ## Your Task
 

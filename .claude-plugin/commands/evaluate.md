@@ -1,18 +1,13 @@
 ---
-name: evaluate
-description: "Evaluate a brand name: /evaluate <name> [--mission description]"
-arguments:
-  - name: name
-    description: The brand name to evaluate
-    required: true
-  - name: mission
-    description: Company mission/description for alignment scoring
-    required: false
+description: "Evaluate a brand name with domain, social, and perception analysis"
+argument-hint: "<name> [mission/description]"
 ---
 
-# Evaluate Brand Name: $ARGUMENTS.name
+# Evaluate Brand Name
 
-Mission/Description: $ARGUMENTS.mission
+Parse the user input to extract:
+- **Name**: The brand name to evaluate (first word/token)
+- **Mission**: Everything after the name (optional - if not provided, ask for it or infer from context)
 
 ## Your Task
 
