@@ -62,7 +62,27 @@ Check for problematic meanings in:
 
 **Red flags:** Profanity, negative connotations, embarrassing meanings
 
-### 6. AI Perception Analysis (Persona-Based)
+### 6. Similar Companies Check
+
+Search for existing companies with similar names to identify confusion risk:
+
+**Check for:**
+- Phonetically similar names (sound alike when spoken)
+- Visually similar names (look alike when written)
+- Names with similar prefixes/suffixes
+- Names in the same or adjacent industries
+
+**How to check:** Use WebSearch to find companies with similar names. Consider:
+- Direct competitors with similar names
+- Well-known brands that could cause confusion
+- Companies that might have trademark claims
+
+**Risk levels:**
+- **Low:** No similar companies found, or only in unrelated industries
+- **Medium:** Similar names exist in adjacent industries
+- **High:** Very similar names in same industry, or conflicts with well-known brands
+
+### 7. AI Perception Analysis (Persona-Based)
 
 **IMPORTANT:** Use the Task tool to spawn 5 persona subagents in parallel. Each persona evaluates the brand name from their perspective.
 
@@ -154,6 +174,10 @@ After all 5 agents complete, synthesize their responses:
 ### International Check
 {Any issues found, or "No issues detected in major languages"}
 
+### Similar Companies: {LOW/MEDIUM/HIGH} RISK
+{List of similar companies found, if any}
+- **CompanyName** (industry) - reason for similarity
+
 ### AI Perception Analysis (5 Personas)
 
 **Trust Rate:** {X}/5 personas would trust this brand
@@ -184,11 +208,12 @@ Score: {X}/10
 ## Scoring Guide
 
 Calculate overall score as weighted average:
-- Domain availability: 25% (50 pts for .com, 50 pts split among others)
-- Social handles: 15% (equal weight per platform)
+- Domain availability: 20% (50 pts for .com, 50 pts split among others)
+- Social handles: 10% (equal weight per platform)
 - Trademark risk: 20% (low=100, medium=50, high=10)
-- Pronunciation: 20% (score * 10)
-- International: 20% (100 - 20 per issue found)
+- Pronunciation: 15% (score * 10)
+- International: 15% (100 - 20 per issue found)
+- Similar companies: 20% (low=85, medium=60, high=20)
 
 ## Example
 
@@ -199,5 +224,6 @@ User: "Evaluate the brand name 'Luminary' for an education technology company"
 3. Search USPTO via WebSearch
 4. Analyze pronunciation (4 syllables, easy spelling)
 5. Check international meanings
-6. **Launch 5 persona agents in parallel using Task tool**
-7. Synthesize and present results
+6. **Search for similar companies** (e.g., Lumina, Illuminate, Luminari)
+7. **Launch 5 persona agents in parallel using Task tool**
+8. Synthesize and present results

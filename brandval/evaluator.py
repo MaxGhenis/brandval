@@ -8,6 +8,22 @@ import whois
 
 
 @dataclass
+class SimilarCompany:
+    """A similar-sounding existing company."""
+    name: str
+    similarity_score: float  # 0-1, higher = more similar
+    industry: str
+    reason: str  # Why it's similar (phonetic, spelling, etc.)
+
+
+@dataclass
+class SimilarCompaniesResult:
+    """Result of similar companies search."""
+    matches: list[SimilarCompany]
+    confusion_risk: str  # "low", "medium", "high"
+
+
+@dataclass
 class TrademarkResult:
     """Result of trademark search."""
     risk_level: str  # "low", "medium", "high"
@@ -41,6 +57,7 @@ class EvaluationResult:
     trademark_score: float
     pronunciation_score: float
     international_score: float
+    similar_companies_score: float = 100.0
 
     domains: dict[str, bool] = field(default_factory=dict)
     social: dict[str, bool] = field(default_factory=dict)
@@ -48,6 +65,7 @@ class EvaluationResult:
     pronunciation: Optional[PronunciationResult] = None
     international: dict[str, dict] = field(default_factory=dict)
     perception: Optional[PerceptionResult] = None
+    similar_companies: Optional[SimilarCompaniesResult] = None
 
     def to_dict(self) -> dict:
         """Export as dictionary."""
@@ -96,6 +114,15 @@ class EvaluationResult:
                 f"- Spelling: {self.pronunciation.spelling_difficulty}",
             ])
 
+        if self.similar_companies and self.similar_companies.matches:
+            lines.extend([
+                "",
+                f"### Similar Companies: {self.similar_companies.confusion_risk.upper()} RISK",
+                "",
+            ])
+            for company in self.similar_companies.matches:
+                lines.append(f"- **{company.name}** ({company.industry}) - {company.reason}")
+
         return "\n".join(lines)
 
 
@@ -127,6 +154,7 @@ class BrandEvaluator:
         pronunciation = self.analyze_pronunciation(name)
         international = self.check_international(name)
         perception = self.analyze_perception(name, mission)
+        similar_companies = self.find_similar_companies(name)
 
         # Calculate scores
         domain_score = self._calc_domain_score(domains)
@@ -134,14 +162,16 @@ class BrandEvaluator:
         trademark_score = self._calc_trademark_score(trademark)
         pronunciation_score = pronunciation.score * 10  # 0-10 -> 0-100
         international_score = self._calc_international_score(international)
+        similar_companies_score = self._calc_similar_companies_score(similar_companies)
 
         # Weighted overall score
         overall_score = (
-            domain_score * 0.25
-            + social_score * 0.15
+            domain_score * 0.20
+            + social_score * 0.10
             + trademark_score * 0.20
-            + pronunciation_score * 0.20
-            + international_score * 0.20
+            + pronunciation_score * 0.15
+            + international_score * 0.15
+            + similar_companies_score * 0.20
         )
 
         return EvaluationResult(
@@ -152,12 +182,14 @@ class BrandEvaluator:
             trademark_score=trademark_score,
             pronunciation_score=pronunciation_score,
             international_score=international_score,
+            similar_companies_score=similar_companies_score,
             domains=domains,
             social=social,
             trademark=trademark,
             pronunciation=pronunciation,
             international=international,
             perception=perception,
+            similar_companies=similar_companies,
         )
 
     def check_domains(self, name: str) -> dict[str, bool]:
@@ -180,6 +212,255 @@ class BrandEvaluator:
         """Search for trademark conflicts."""
         # TODO: Implement USPTO TESS search
         return TrademarkResult(risk_level="low", matches=[])
+
+    def find_similar_companies(self, name: str) -> SimilarCompaniesResult:
+        """Find similar-sounding or confusingly similar existing companies."""
+        # Check if we have an API key for real analysis
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            try:
+                return self._find_similar_with_llm(name)
+            except Exception as e:
+                print(f"LLM similar companies search failed: {e}")
+
+        # Fallback to static database of well-known companies
+        return self._find_similar_static(name)
+
+    def _find_similar_static(self, name: str) -> SimilarCompaniesResult:
+        """Check against a static database of well-known companies."""
+        name_lower = name.lower()
+        matches = []
+
+        # Database of well-known tech/business companies for comparison
+        known_companies = {
+            "stripe": "payments",
+            "shopify": "e-commerce",
+            "slack": "communication",
+            "zoom": "video conferencing",
+            "notion": "productivity",
+            "figma": "design",
+            "canva": "design",
+            "asana": "project management",
+            "trello": "project management",
+            "airtable": "database",
+            "hubspot": "marketing",
+            "mailchimp": "email marketing",
+            "twilio": "communication APIs",
+            "plaid": "fintech",
+            "brex": "fintech",
+            "ramp": "fintech",
+            "gusto": "HR/payroll",
+            "rippling": "HR",
+            "deel": "HR",
+            "lattice": "HR",
+            "lever": "recruiting",
+            "greenhouse": "recruiting",
+            "datadog": "monitoring",
+            "snowflake": "data",
+            "databricks": "data",
+            "confluent": "data streaming",
+            "vercel": "hosting",
+            "netlify": "hosting",
+            "supabase": "database",
+            "firebase": "backend",
+            "mongodb": "database",
+            "elastic": "search",
+            "algolia": "search",
+            "auth0": "authentication",
+            "okta": "identity",
+            "cloudflare": "infrastructure",
+            "fastly": "CDN",
+            "segment": "analytics",
+            "amplitude": "analytics",
+            "mixpanel": "analytics",
+            "intercom": "customer support",
+            "zendesk": "customer support",
+            "freshworks": "customer support",
+            "calendly": "scheduling",
+            "loom": "video",
+            "miro": "collaboration",
+            "linear": "project management",
+            "monday": "project management",
+            "clickup": "project management",
+            "anthropic": "AI",
+            "openai": "AI",
+            "cohere": "AI",
+            "stability": "AI",
+            "midjourney": "AI",
+            "jasper": "AI",
+            "copy.ai": "AI",
+            "grammarly": "writing",
+            "notion": "productivity",
+            "coda": "productivity",
+            "airtable": "productivity",
+        }
+
+        for company, industry in known_companies.items():
+            similarity = self._calculate_similarity(name_lower, company)
+            if similarity > 0.5:
+                reason = self._get_similarity_reason(name_lower, company)
+                matches.append(SimilarCompany(
+                    name=company.title(),
+                    similarity_score=similarity,
+                    industry=industry,
+                    reason=reason,
+                ))
+
+        # Sort by similarity score
+        matches.sort(key=lambda x: x.similarity_score, reverse=True)
+        matches = matches[:5]  # Top 5 matches
+
+        # Determine confusion risk
+        if not matches:
+            confusion_risk = "low"
+        elif any(m.similarity_score > 0.8 for m in matches):
+            confusion_risk = "high"
+        elif any(m.similarity_score > 0.6 for m in matches):
+            confusion_risk = "medium"
+        else:
+            confusion_risk = "low"
+
+        return SimilarCompaniesResult(matches=matches, confusion_risk=confusion_risk)
+
+    def _find_similar_with_llm(self, name: str) -> SimilarCompaniesResult:
+        """Use LLM to find similar companies."""
+        from anthropic import Anthropic
+        client = Anthropic()
+
+        prompt = f"""Find existing companies with names similar to "{name}".
+
+Consider:
+1. Phonetically similar names (sound alike)
+2. Visually similar names (look alike when written)
+3. Names with similar word roots or morphemes
+4. Names that could cause brand confusion
+
+For each similar company found, provide:
+- Company name
+- Industry
+- Similarity score (0.0-1.0)
+- Reason for similarity
+
+Respond in JSON format:
+{{
+    "matches": [
+        {{"name": "CompanyName", "industry": "industry", "similarity_score": 0.7, "reason": "phonetically similar"}}
+    ],
+    "confusion_risk": "low|medium|high"
+}}
+
+Only include companies with similarity_score > 0.5. Respond ONLY with valid JSON."""
+
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        result = json.loads(response.content[0].text)
+
+        matches = [
+            SimilarCompany(
+                name=m["name"],
+                similarity_score=m["similarity_score"],
+                industry=m["industry"],
+                reason=m["reason"],
+            )
+            for m in result.get("matches", [])
+        ]
+
+        return SimilarCompaniesResult(
+            matches=matches,
+            confusion_risk=result.get("confusion_risk", "low"),
+        )
+
+    def _calculate_similarity(self, name1: str, name2: str) -> float:
+        """Calculate similarity between two names using multiple metrics."""
+        # Levenshtein-based similarity
+        edit_distance = self._levenshtein_distance(name1, name2)
+        max_len = max(len(name1), len(name2))
+        edit_similarity = 1 - (edit_distance / max_len) if max_len > 0 else 1
+
+        # Phonetic similarity (simplified soundex-like)
+        phonetic1 = self._simplify_phonetic(name1)
+        phonetic2 = self._simplify_phonetic(name2)
+        phonetic_similarity = 1.0 if phonetic1 == phonetic2 else 0.0
+        if phonetic1.startswith(phonetic2) or phonetic2.startswith(phonetic1):
+            phonetic_similarity = 0.7
+
+        # Prefix/suffix similarity
+        prefix_len = 0
+        for i in range(min(len(name1), len(name2))):
+            if name1[i] == name2[i]:
+                prefix_len += 1
+            else:
+                break
+        prefix_similarity = prefix_len / max_len if max_len > 0 else 0
+
+        # Combined score (weighted average)
+        return (edit_similarity * 0.4 + phonetic_similarity * 0.4 + prefix_similarity * 0.2)
+
+    def _levenshtein_distance(self, s1: str, s2: str) -> int:
+        """Calculate Levenshtein edit distance."""
+        if len(s1) < len(s2):
+            return self._levenshtein_distance(s2, s1)
+
+        if len(s2) == 0:
+            return len(s1)
+
+        prev_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            curr_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = prev_row[j + 1] + 1
+                deletions = curr_row[j] + 1
+                substitutions = prev_row[j] + (c1 != c2)
+                curr_row.append(min(insertions, deletions, substitutions))
+            prev_row = curr_row
+
+        return prev_row[-1]
+
+    def _simplify_phonetic(self, name: str) -> str:
+        """Simplified phonetic encoding."""
+        name = name.lower()
+        # Common phonetic substitutions
+        replacements = [
+            ("ph", "f"),
+            ("ck", "k"),
+            ("gh", "g"),
+            ("kn", "n"),
+            ("wr", "r"),
+            ("wh", "w"),
+            ("ee", "i"),
+            ("ea", "i"),
+            ("oo", "u"),
+            ("ou", "u"),
+            ("ai", "a"),
+            ("ay", "a"),
+            ("ey", "i"),
+            ("ie", "i"),
+            ("y", "i"),
+        ]
+        for old, new in replacements:
+            name = name.replace(old, new)
+        # Remove vowels except first
+        if len(name) > 1:
+            name = name[0] + "".join(c for c in name[1:] if c not in "aeiou")
+        return name
+
+    def _get_similarity_reason(self, name1: str, name2: str) -> str:
+        """Determine why two names are similar."""
+        if name1 == name2:
+            return "identical"
+        if name1.startswith(name2) or name2.startswith(name1):
+            return "shares prefix"
+        if self._simplify_phonetic(name1) == self._simplify_phonetic(name2):
+            return "sounds similar"
+        edit_dist = self._levenshtein_distance(name1, name2)
+        if edit_dist <= 2:
+            return "very close spelling"
+        if edit_dist <= 4:
+            return "similar spelling"
+        return "partially similar"
 
     def score_pronunciation(self, name: str) -> float:
         """Score pronunciation difficulty (0-10, higher = easier)."""
@@ -325,3 +606,15 @@ class BrandEvaluator:
             return 100
         issues = sum(1 for v in international.values() if v.get("has_issue"))
         return max(0, 100 - (issues * 20))
+
+    def _calc_similar_companies_score(self, similar: SimilarCompaniesResult) -> float:
+        """Calculate similar companies score (0-100). Lower = more conflicts."""
+        if not similar.matches:
+            return 100
+        # High risk = big penalty
+        if similar.confusion_risk == "high":
+            return 20
+        elif similar.confusion_risk == "medium":
+            return 60
+        else:
+            return 85
