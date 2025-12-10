@@ -1,3 +1,9 @@
+---
+name: Brand Name Evaluation
+description: Use this skill when the user wants to evaluate a brand name, company name, or product name. Checks domain availability, social handles, trademarks, pronunciation, international meanings, similar companies, and AI perception analysis.
+version: 0.1.0
+---
+
 # Brand Name Evaluation Skill
 
 Evaluate brand names comprehensively across multiple dimensions. This skill provides a structured approach to brand name evaluation.

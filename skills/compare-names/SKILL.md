@@ -1,3 +1,9 @@
+---
+name: Brand Name Comparison
+description: Use this skill when the user wants to compare multiple brand name options side-by-side to decide which is best.
+version: 0.1.0
+---
+
 # Brand Name Comparison Skill
 
 Compare multiple brand name candidates side-by-side to help users choose the best option.

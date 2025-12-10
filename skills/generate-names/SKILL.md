@@ -1,3 +1,9 @@
+---
+name: Brand Name Generation
+description: Use this skill when the user wants to brainstorm or generate brand name ideas for a company, product, or project.
+version: 0.1.0
+---
+
 # Brand Name Generation Skill
 
 Generate creative brand name candidates based on company context, mission, and target market.
