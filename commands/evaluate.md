@@ -19,27 +19,48 @@ Based on the mission/description (or infer from the name if not provided), ident
 - Make them specific: age, role, industry, values, tech-savviness
 - These should be realistic people who would actually encounter this brand
 
-### 2. Domain Availability
-Use WebFetch to check these domains at `https://who.is/whois/{domain}`:
-- $ARGUMENTS.name.com
-- $ARGUMENTS.name.io
-- $ARGUMENTS.name.co
-- $ARGUMENTS.name.ai
-- $ARGUMENTS.name.app
+### 2. Domain Availability (Two-Step Check)
 
-For each, determine if available (no registration info) or taken (has registrant/dates).
+**Step 1: Check if domain is LIVE** (more important than whois)
+Use Bash with `curl -sI --connect-timeout 5 https://{name}.{tld}` for each:
+- {name}.com
+- {name}.io
+- {name}.ai (prioritize for AI/tech products)
+- {name}.co
+
+If curl returns headers (HTTP 200/301/302) → domain has active site
+If curl returns nothing/error → domain is parked or available
+
+**Step 2: For domains with no active site, check whois**
+Use Bash with `whois {name}.{tld} | head -30` to check registration status.
+
+**Classify each domain as:**
+- ✓ Available (not registered)
+- ⚠️ Parked (registered but no active site - acquirable)
+- ✗ Active (registered with live website - brand conflict risk)
 
 ### 3. Social Handle Check
 Use WebFetch to check availability on major platforms:
 - Twitter/X: `https://twitter.com/{name}` - 404 = available
 - GitHub: `https://github.com/{name}` - 404 = available
 
-### 4. Similar Companies Research
-Use WebSearch to find existing companies with similar names:
-- Search: `"{name}" company`
-- Search: `{name} startup OR brand`
+### 4. Similar Companies Research (Verify Active Status)
 
-List any similar companies found with their industry. Note potential confusion risks.
+**Step 1: Search for similar names**
+Use WebSearch: `"{name}" company OR startup OR brand`
+
+**Step 2: Verify each result is ACTIVE**
+For each company found, use Bash `curl -sI --connect-timeout 5 {their_website}` to check:
+- Is their website live?
+- Are they in the same industry/market?
+- When were they last active? (check for recent news, social posts)
+
+**Classify each competitor as:**
+- 🔴 Active competitor (live site, same market) - high brand conflict risk
+- 🟡 Tangential (live site, different market/geography) - low risk
+- ⚪ Defunct/inactive (no live site, old listings) - no risk
+
+Only count active, same-market competitors as brand risks.
 
 ### 5. Pronunciation Analysis
 Assess:
@@ -80,9 +101,14 @@ Generate 3 potential taglines that:
 Rate the name-tagline pairing potential (1-10): How well can a tagline "rescue" a confusing name?
 
 ### 10. Calculate Overall Score (0-100)
-- Domain availability: 15 pts (weight .com heavily)
+
+**Domain scoring (15 pts):**
+- For each of .com, .ai, .io: ✓ available = 5pts, ⚠️ parked = 3pts, ✗ active = 0pts
+- Weight .ai highest for AI/tech products, .com for general business
+
+**Other scoring:**
 - Social handles: 5 pts
-- Similar companies: 15 pts (fewer/less similar = better)
+- Similar companies: 15 pts (only deduct for 🔴 active same-market competitors)
 - Pronunciation: 10 pts
 - International: 10 pts
 - Persona perception: 20 pts
@@ -100,14 +126,16 @@ Rate the name-tagline pairing potential (1-10): How well can a tagline "rescue" 
 
 | Category | Score | Details |
 |----------|-------|---------|
-| Domains | X/15 | .com: ✓/✗, .io: ✓/✗, ... |
+| Domains | X/15 | .com: ✓/⚠️/✗, .ai: ✓/⚠️/✗, .io: ✓/⚠️/✗ |
 | Social | X/5 | Twitter: ✓/✗, GitHub: ✓/✗ |
-| Similar Names | X/15 | X companies found |
+| Similar Names | X/15 | 🔴 X active, 🟡 X tangential, ⚪ X defunct |
 | Pronunciation | X/10 | X syllables, [difficulty] |
 | International | X/10 | [issues or "No issues"] |
 | Perception | X/20 | Avg rating from personas |
 | **Brand Scope** | X/15 | [narrow/flexible/expansive] |
 | **Tagline Potential** | X/10 | [suggested taglines] |
+
+**Domain Legend:** ✓ = available, ⚠️ = parked (acquirable), ✗ = active site
 
 **Brand Scope Assessment:**
 - Narrowness: [Does name box in the company?]
