@@ -1,65 +1,95 @@
 ---
-description: "Evaluate a brand name: /evaluate <name>"
-arguments:
-  - name: name
-    description: The brand name to evaluate
-    required: true
-  - name: mission
-    description: Optional company mission/description for alignment scoring
-    required: false
+description: "Evaluate a brand name with domain, social, and perception analysis"
+argument-hint: "<name> [mission/description]"
 ---
 
-# Evaluate Brand Name: $ARGUMENTS.name
+# Evaluate Brand Name
 
-Run a comprehensive evaluation of the brand name **$ARGUMENTS.name** using the evaluate-brand skill.
+Parse the user input to extract:
+- **Name**: The brand name to evaluate (first word/token)
+- **Mission**: Everything after the name (optional - if not provided, ask for it or infer from context)
 
-## Instructions
+## Your Task
 
-1. **Domain Availability**: Check availability for:
-   - $ARGUMENTS.name.com
-   - $ARGUMENTS.name.io
-   - $ARGUMENTS.name.co
-   - $ARGUMENTS.name.ai
-   - $ARGUMENTS.name.app
+Evaluate this brand name comprehensively using native Claude Code capabilities (no CLI needed):
 
-2. **Social Handles**: Check availability on:
-   - Twitter/X: @$ARGUMENTS.name
-   - Instagram: @$ARGUMENTS.name
-   - LinkedIn: company/$ARGUMENTS.name
-   - TikTok: @$ARGUMENTS.name
-   - GitHub: github.com/$ARGUMENTS.name
+### 1. Identify Target Audience Personas
+Based on the mission/description (or infer from the name if not provided), identify 5 relevant personas:
+- Consider: customers, users, investors, partners, employees
+- Make them specific: age, role, industry, values, tech-savviness
+- These should be realistic people who would actually encounter this brand
 
-3. **Trademark Risk**: Search USPTO TESS for similar marks
+### 2. Domain Availability
+Use WebFetch to check these domains at `https://who.is/whois/{domain}`:
+- $ARGUMENTS.name.com
+- $ARGUMENTS.name.io
+- $ARGUMENTS.name.co
+- $ARGUMENTS.name.ai
+- $ARGUMENTS.name.app
 
-4. **Pronunciation Analysis**: Score based on:
-   - Syllable count
-   - Phonetic clarity
-   - Spelling predictability
+For each, determine if available (no registration info) or taken (has registrant/dates).
 
-5. **International Check**: Verify no problematic meanings in:
-   - Spanish, French, German, Mandarin, Japanese, Portuguese, Arabic
+### 3. Social Handle Check
+Use WebFetch to check availability on major platforms:
+- Twitter/X: `https://twitter.com/{name}` - 404 = available
+- GitHub: `https://github.com/{name}` - 404 = available
 
-6. **AI Perception Analysis**: Analyze what the name evokes:
-   - What kind of company would you expect this to be?
-   - What emotions/associations does it trigger?
-   - What industry does it suggest?
-   - Is it memorable?
+### 4. Similar Companies Research
+Use WebSearch to find existing companies with similar names:
+- Search: `"{name}" company`
+- Search: `{name} startup OR brand`
 
-{{#if $ARGUMENTS.mission}}
-7. **Mission Alignment**: Evaluate how well "$ARGUMENTS.name" aligns with:
-   > $ARGUMENTS.mission
-{{/if}}
+List any similar companies found with their industry. Note potential confusion risks.
 
-## Output
+### 5. Pronunciation Analysis
+Assess:
+- Syllable count
+- Spelling difficulty (easy/medium/hard)
+- Phonetic clarity (would people spell it correctly after hearing it?)
 
-Provide the full evaluation scorecard with:
-- Overall score (0-100)
-- Domain availability table
-- Social handle availability table
-- Trademark risk assessment
-- Pronunciation score (0-10)
-- International check results
-- AI perception analysis
-- Final recommendation
+### 6. International Check
+Consider if the name has problematic meanings in:
+- Spanish, French, German, Mandarin, Japanese, Portuguese, Arabic
 
-Use the evaluate-brand skill format for consistent output.
+### 7. Dynamic Persona Perception Analysis
+For each persona you identified, roleplay as them and provide:
+- Memorability rating (1-10)
+- Professionalism/credibility rating (1-10)
+- Mission alignment (1-10, if mission provided)
+- One-sentence gut reaction
+- Would they trust/use a company with this name? (yes/maybe/no)
+
+### 8. Calculate Overall Score (0-100)
+- Domain availability: 20 pts (weight .com heavily)
+- Social handles: 10 pts
+- Similar companies: 20 pts (fewer/less similar = better)
+- Pronunciation: 15 pts
+- International: 15 pts
+- Persona ratings: 20 pts
+
+### 9. Present Results
+
+## $ARGUMENTS.name - Overall Score: XX/100
+
+**Target Audience Personas:**
+1. [Persona 1 - brief description]
+2. [Persona 2 - brief description]
+... etc
+
+| Category | Score | Details |
+|----------|-------|---------|
+| Domains | X/20 | .com: ✓/✗, .io: ✓/✗, ... |
+| Social | X/10 | Twitter: ✓/✗, GitHub: ✓/✗ |
+| Similar Names | X/20 | X companies found |
+| Pronunciation | X/15 | X syllables, [difficulty] |
+| International | X/15 | [issues or "No issues"] |
+| Perception | X/20 | Avg rating from personas |
+
+**Persona Feedback:**
+For each persona, show their ratings and one-sentence reaction.
+
+**Strengths:** What works well about this name
+**Concerns:** Potential issues to consider
+**Verdict:** Overall assessment - is this a strong name choice?
+
+**Disclaimer:** This is general information, not legal advice. Consult a trademark attorney before finalizing your brand name.

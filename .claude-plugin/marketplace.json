@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "namecast",
-      "source": "/Users/maxghenis/Projects/namecast",
+      "source": "./",
       "description": "AI-powered brand name oracle - generate, filter, and evaluate brand names",
       "version": "0.4.0"
     }
