@@ -26,5 +26,32 @@
       "description": "Evaluate a brand name: /evaluate <name>",
       "path": "commands/evaluate.md"
     }
+  ],
+  "agents": [
+    {
+      "name": "persona-sarah",
+      "description": "Sarah persona (28yo Software Engineer) for brand perception analysis",
+      "path": "agents/persona-sarah.md"
+    },
+    {
+      "name": "persona-robert",
+      "description": "Robert persona (55yo Small Business Owner) for brand perception analysis",
+      "path": "agents/persona-robert.md"
+    },
+    {
+      "name": "persona-maya",
+      "description": "Maya persona (34yo Marketing Director) for brand perception analysis",
+      "path": "agents/persona-maya.md"
+    },
+    {
+      "name": "persona-james",
+      "description": "James persona (42yo Investor) for brand perception analysis",
+      "path": "agents/persona-james.md"
+    },
+    {
+      "name": "persona-lisa",
+      "description": "Lisa persona (22yo College Student) for brand perception analysis",
+      "path": "agents/persona-lisa.md"
+    }
   ]
 }

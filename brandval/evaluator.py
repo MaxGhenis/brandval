@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field, asdict
 from typing import Optional
+import os
 import json
 import whois
 
@@ -241,8 +242,22 @@ class BrandEvaluator:
         return result
 
     def analyze_perception(self, name: str, mission: Optional[str] = None) -> PerceptionResult:
-        """Analyze brand perception using AI."""
-        # TODO: Implement actual AI analysis with Anthropic
+        """Analyze brand perception using AI personas."""
+        # Check if we have an API key for real analysis
+        if os.environ.get("ANTHROPIC_API_KEY"):
+            try:
+                from brandval.perception import analyze_with_personas
+                analysis = analyze_with_personas(name, mission, num_personas=5)
+                return PerceptionResult(
+                    evokes=analysis.evokes,
+                    industry_association=analysis.industry_association,
+                    memorability=analysis.memorability,
+                    mission_alignment=analysis.mission_alignment,
+                )
+            except Exception as e:
+                print(f"AI perception analysis failed: {e}")
+
+        # Fallback to placeholder if no API key or error
         result = PerceptionResult(
             evokes="professional, modern",
             industry_association=["technology", "business"],
