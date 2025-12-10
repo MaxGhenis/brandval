@@ -3,16 +3,18 @@ import HomePage from './pages/HomePage'
 import ThesisPage from './pages/ThesisPage'
 import './styles/App.css'
 
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || ''
+
 function App() {
-  const isThesisPage = window.location.pathname === '/thesis'
+  const isThesisPage = window.location.pathname.endsWith('/thesis')
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <div className="App">
         {!isThesisPage && (
           <nav className="nav">
             <div className="nav-container">
-              <a href="/" className="nav-logo">
+              <a href={`${basename}/`} className="nav-logo">
                 <svg className="nav-logo-icon" viewBox="0 0 32 32" fill="none">
                   <circle cx="16" cy="16" r="12" stroke="currentColor" strokeWidth="2"/>
                   <circle cx="16" cy="16" r="5" fill="currentColor"/>
@@ -22,7 +24,7 @@ function App() {
                 Namecast
               </a>
               <div className="nav-links">
-                <a href="/thesis">Thesis</a>
+                <a href={`${basename}/thesis`}>Thesis</a>
                 <a href="https://github.com">GitHub</a>
                 <a href="mailto:hello@namecast.ai">Contact</a>
               </div>

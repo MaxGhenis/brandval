@@ -5,7 +5,7 @@ import HomePage from '../pages/HomePage'
 
 const renderHomePage = () => {
   return render(
-    <BrowserRouter>
+    <BrowserRouter basename="">
       <HomePage />
     </BrowserRouter>
   )
