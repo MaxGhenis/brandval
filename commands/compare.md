@@ -30,23 +30,40 @@ For each name, roleplay as each persona and rate:
 - Memorability (1-10)
 - Professionalism (1-10)
 
-### 4. Calculate Scores (0-100)
-- Domain: 40 pts (.com = 40, .io only = 25)
-- Persona ratings: 40 pts (avg of memorability + professionalism, scaled)
+### 4. Brand Scope Analysis (CRITICAL)
+For each name, assess:
+- **Narrowness**: Does name imply only ONE product/feature? (1-10, higher = more expansive)
+- **Mission fit**: Does name capture the FULL vision, not just current features?
+
+Examples:
+- "TaxGraph" for an economy simulation company = 3/10 (too narrow, boxes into tax only)
+- "Cosilico" for economy simulation = 9/10 (abstract, allows growth)
+- "Amazon" = 10/10 (completely abstract)
+
+### 5. Calculate Scores (0-100)
+- Domain: 30 pts (.com = 30, .io only = 20)
+- Persona perception: 30 pts (avg of memorability + professionalism, scaled)
+- **Brand scope: 20 pts** (penalize names that box in the company)
 - Linguistic: 20 pts (pronunciation ease, spelling, uniqueness)
 
-### 5. Present Comparison Table
+### 6. Present Comparison Table
 
-| Name | .com | .io | Twitter | GitHub | Persona Avg | Score |
-|------|------|-----|---------|--------|-------------|-------|
+| Name | .com | .io | GitHub | Perception | Scope | Score |
+|------|------|-----|--------|------------|-------|-------|
+
+**Brand Scope Breakdown:**
+| Name | Narrowness | Mission Fit | Scope Score |
+|------|------------|-------------|-------------|
 
 **Winner:** [Name] with score X/100
 
 **Runner-up:** [Name] - why it's close
 
 **Quick takes:**
-- [Name 1]: One sentence summary
-- [Name 2]: One sentence summary
+- [Name 1]: One sentence including scope assessment
+- [Name 2]: One sentence including scope assessment
 - etc.
+
+**Scope Warning:** Flag any names that score <5 on brand scope - these will limit future growth.
 
 **Disclaimer:** This is general information, not legal advice. Consult a trademark attorney before finalizing your brand name.

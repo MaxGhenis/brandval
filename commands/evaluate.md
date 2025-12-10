@@ -59,15 +59,37 @@ For each persona you identified, roleplay as them and provide:
 - One-sentence gut reaction
 - Would they trust/use a company with this name? (yes/maybe/no)
 
-### 8. Calculate Overall Score (0-100)
-- Domain availability: 20 pts (weight .com heavily)
-- Social handles: 10 pts
-- Similar companies: 20 pts (fewer/less similar = better)
-- Pronunciation: 15 pts
-- International: 15 pts
-- Persona ratings: 20 pts
+### 8. Brand Scope Analysis (CRITICAL)
+Evaluate whether the name boxes in the company or allows for growth:
+- **Narrowness penalty**: Does the name imply only ONE product/feature? (e.g., "TaxGraph" = only tax, "InvoiceBot" = only invoices)
+- **Expansion potential**: Could the company expand into adjacent areas without the name feeling wrong?
+- **Vision alignment**: Does the name capture the FULL mission, not just current features?
 
-### 9. Present Results
+Score 1-10:
+- 10: Name is abstract/expansive, allows unlimited growth (e.g., "Amazon", "Apple")
+- 7-9: Name hints at domain but doesn't constrain (e.g., "Stripe" for payments)
+- 4-6: Name somewhat limits scope but has flexibility
+- 1-3: Name boxes company into narrow niche (e.g., "TaxGraph" for an economy simulation company)
+
+### 9. Tagline Pairing (if mission provided)
+Generate 3 potential taglines that:
+- Explain/complement the name
+- Capture the full mission
+- Are memorable and quotable
+
+Rate the name-tagline pairing potential (1-10): How well can a tagline "rescue" a confusing name?
+
+### 10. Calculate Overall Score (0-100)
+- Domain availability: 15 pts (weight .com heavily)
+- Social handles: 5 pts
+- Similar companies: 15 pts (fewer/less similar = better)
+- Pronunciation: 10 pts
+- International: 10 pts
+- Persona perception: 20 pts
+- **Brand scope: 15 pts** (penalize narrow names)
+- **Tagline potential: 10 pts** (can a tagline make the name click?)
+
+### 11. Present Results
 
 ## $ARGUMENTS.name - Overall Score: XX/100
 
@@ -78,18 +100,30 @@ For each persona you identified, roleplay as them and provide:
 
 | Category | Score | Details |
 |----------|-------|---------|
-| Domains | X/20 | .com: ✓/✗, .io: ✓/✗, ... |
-| Social | X/10 | Twitter: ✓/✗, GitHub: ✓/✗ |
-| Similar Names | X/20 | X companies found |
-| Pronunciation | X/15 | X syllables, [difficulty] |
-| International | X/15 | [issues or "No issues"] |
+| Domains | X/15 | .com: ✓/✗, .io: ✓/✗, ... |
+| Social | X/5 | Twitter: ✓/✗, GitHub: ✓/✗ |
+| Similar Names | X/15 | X companies found |
+| Pronunciation | X/10 | X syllables, [difficulty] |
+| International | X/10 | [issues or "No issues"] |
 | Perception | X/20 | Avg rating from personas |
+| **Brand Scope** | X/15 | [narrow/flexible/expansive] |
+| **Tagline Potential** | X/10 | [suggested taglines] |
+
+**Brand Scope Assessment:**
+- Narrowness: [Does name box in the company?]
+- Expansion potential: [Can company grow beyond current focus?]
+- Vision alignment: [Does name capture full mission?]
+
+**Suggested Taglines:**
+1. "[tagline 1]"
+2. "[tagline 2]"
+3. "[tagline 3]"
 
 **Persona Feedback:**
 For each persona, show their ratings and one-sentence reaction.
 
 **Strengths:** What works well about this name
-**Concerns:** Potential issues to consider
+**Concerns:** Potential issues to consider (including scope limitations)
 **Verdict:** Overall assessment - is this a strong name choice?
 
 **Disclaimer:** This is general information, not legal advice. Consult a trademark attorney before finalizing your brand name.
