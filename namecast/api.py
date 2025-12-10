@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from namecast.evaluator import BrandEvaluator
+from namecast.evaluator import BrandEvaluator, NamecastWorkflow
 
 
 app = FastAPI(
@@ -23,6 +23,7 @@ app.add_middleware(
 )
 
 evaluator = BrandEvaluator()
+workflow = NamecastWorkflow()
 
 
 class EvaluateRequest(BaseModel):
@@ -33,6 +34,13 @@ class EvaluateRequest(BaseModel):
 class CompareRequest(BaseModel):
     names: list[str]
     mission: str | None = None
+
+
+class WorkflowRequest(BaseModel):
+    project_description: str
+    name_ideas: list[str] | None = None
+    generate_count: int = 10
+    max_to_evaluate: int = 5
 
 
 @app.get("/")
@@ -69,3 +77,52 @@ def compare(request: CompareRequest):
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.post("/workflow")
+def run_workflow(request: WorkflowRequest):
+    """Run the full naming workflow: generate + filter + evaluate.
+
+    This is the smart workflow that:
+    1. Takes a project description
+    2. Optionally uses user's name ideas
+    3. Generates additional AI name suggestions
+    4. Filters by domain availability (.com or .io required)
+    5. Runs full evaluation only on viable candidates
+    """
+    if not request.project_description or len(request.project_description) < 10:
+        raise HTTPException(
+            status_code=400,
+            detail="Project description must be at least 10 characters"
+        )
+
+    result = workflow.run(
+        project_description=request.project_description,
+        user_name_ideas=request.name_ideas,
+        generate_count=request.generate_count,
+        max_to_evaluate=request.max_to_evaluate,
+    )
+
+    # Convert to dict for JSON response
+    return {
+        "project_description": result.project_description,
+        "all_candidates": [
+            {
+                "name": c.name,
+                "source": c.source,
+                "domains_available": c.domains_available,
+                "passed_domain_filter": c.passed_domain_filter,
+                "rejection_reason": c.rejection_reason,
+                "evaluation": c.evaluation.to_dict() if c.evaluation else None,
+            }
+            for c in result.all_candidates
+        ],
+        "viable_count": len(result.viable_candidates),
+        "evaluated_count": len(result.evaluated_candidates),
+        "recommended": {
+            "name": result.recommended.name,
+            "source": result.recommended.source,
+            "score": result.recommended.evaluation.overall_score if result.recommended.evaluation else 0,
+            "evaluation": result.recommended.evaluation.to_dict() if result.recommended.evaluation else None,
+        } if result.recommended else None,
+    }

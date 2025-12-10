@@ -1,7 +1,6 @@
 """Tests for the brand name oracle."""
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import patch
 from namecast.evaluator import BrandEvaluator, EvaluationResult
 
 

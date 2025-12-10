@@ -5,28 +5,87 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
+from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from namecast.evaluator import BrandEvaluator
+from namecast.evaluator import BrandEvaluator, NamecastWorkflow
 
 
 console = Console()
 
 
-@click.command()
+@click.group(invoke_without_command=True)
+@click.pass_context
+def main(ctx):
+    """Namecast - AI-powered brand name intelligence.
+
+    Generate, filter, and evaluate brand names with AI.
+
+    Commands:
+
+        namecast find "Your project description" - Generate and evaluate names
+
+        namecast eval Acme - Evaluate a single name
+
+        namecast eval --compare Acme Globex - Compare multiple names
+    """
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
+
+@main.command()
+@click.argument("description")
+@click.option("--ideas", "-i", multiple=True, help="Your name ideas (can specify multiple)")
+@click.option("--generate", "-g", default=10, help="Number of AI names to generate")
+@click.option("--evaluate", "-e", default=5, help="Max names to fully evaluate")
+@click.option("--json", "output_json", is_flag=True, help="Output as JSON")
+def find(description: str, ideas: tuple[str, ...], generate: int, evaluate: int, output_json: bool):
+    """Generate and evaluate brand names for your project.
+
+    Examples:
+
+        namecast find "A SaaS tool for tracking carbon emissions"
+
+        namecast find "Dog walking app" --ideas Waggle --ideas PupPath
+
+        namecast find "AI coding assistant" -g 15 -e 8
+    """
+    workflow = NamecastWorkflow()
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+        transient=True,
+    ) as progress:
+        progress.add_task("Running naming workflow...", total=None)
+        result = workflow.run(
+            project_description=description,
+            user_name_ideas=list(ideas) if ideas else None,
+            generate_count=generate,
+            max_to_evaluate=evaluate,
+        )
+
+    if output_json:
+        click.echo(result.to_json())
+    else:
+        _print_workflow_result(result)
+
+
+@main.command()
 @click.argument("names", nargs=-1, required=True)
 @click.option("--mission", "-m", help="Company mission for alignment scoring")
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
 @click.option("--compare", is_flag=True, help="Compare multiple names side-by-side")
-def main(names: tuple[str, ...], mission: str | None, output_json: bool, compare: bool):
-    """Forecast brand name success - availability, pronunciation, and perception.
+def eval(names: tuple[str, ...], mission: str | None, output_json: bool, compare: bool):
+    """Evaluate specific brand names.
 
     Examples:
 
-        namecast Acme
+        namecast eval Acme
 
-        namecast Acme --mission "Industrial supply company"
+        namecast eval Acme --mission "Industrial supply company"
 
-        namecast --compare Acme Globex Initech
+        namecast eval --compare Acme Globex Initech
     """
     evaluator = BrandEvaluator()
 
@@ -44,6 +103,83 @@ def main(names: tuple[str, ...], mission: str | None, output_json: bool, compare
                 click.echo(result.to_json())
             else:
                 _print_result(result, mission)
+
+
+def _print_workflow_result(result):
+    """Print the workflow result with rich formatting."""
+    console.print()
+    console.print(Panel(
+        f"[dim]{result.project_description}[/dim]",
+        title="[bold]Namecast Workflow Results[/bold]",
+    ))
+
+    # Summary stats
+    console.print()
+    console.print(f"[bold]Candidates:[/bold] {len(result.all_candidates)} total → "
+                  f"{len(result.viable_candidates)} passed domain filter → "
+                  f"{len(result.evaluated_candidates)} fully evaluated")
+
+    # Rejected candidates
+    rejected = [c for c in result.all_candidates if not c.passed_domain_filter]
+    if rejected:
+        console.print()
+        console.print("[dim]Filtered out (no .com or .io available):[/dim]")
+        for c in rejected[:5]:  # Show first 5
+            console.print(f"  [dim]✗ {c.name}[/dim]")
+        if len(rejected) > 5:
+            console.print(f"  [dim]... and {len(rejected) - 5} more[/dim]")
+
+    # Evaluated candidates table
+    if result.evaluated_candidates:
+        console.print()
+        table = Table(title="Evaluated Names", show_header=True)
+        table.add_column("Rank")
+        table.add_column("Name")
+        table.add_column("Source")
+        table.add_column("Score", justify="right")
+        table.add_column(".com")
+        table.add_column(".io")
+
+        # Sort by score
+        sorted_candidates = sorted(
+            result.evaluated_candidates,
+            key=lambda c: c.evaluation.overall_score if c.evaluation else 0,
+            reverse=True
+        )
+
+        for i, c in enumerate(sorted_candidates, 1):
+            score = c.evaluation.overall_score if c.evaluation else 0
+            score_color = "green" if score >= 70 else "yellow" if score >= 50 else "red"
+            com_status = "[green]✓[/green]" if c.domains_available.get(".com") else "[red]✗[/red]"
+            io_status = "[green]✓[/green]" if c.domains_available.get(".io") else "[red]✗[/red]"
+
+            is_recommended = result.recommended and c.name == result.recommended.name
+            rank = f"[bold gold1]★ {i}[/bold gold1]" if is_recommended else str(i)
+
+            table.add_row(
+                rank,
+                f"[bold]{c.name}[/bold]" if is_recommended else c.name,
+                c.source,
+                f"[{score_color}]{score:.0f}[/{score_color}]",
+                com_status,
+                io_status,
+            )
+
+        console.print(table)
+
+    # Recommendation
+    if result.recommended and result.recommended.evaluation:
+        console.print()
+        rec = result.recommended
+        console.print(Panel(
+            f"[bold]{rec.name}[/bold] - Score: {rec.evaluation.overall_score:.0f}/100\n\n"
+            f"[dim]This tool provides general information only and does not constitute legal advice.\n"
+            f"Consult a trademark attorney before finalizing your brand name.[/dim]",
+            title="[bold gold1]★ Recommended[/bold gold1]",
+            border_style="gold1",
+        ))
+
+    console.print()
 
 
 def _print_result(result, mission: str | None):
@@ -79,7 +215,7 @@ def _print_result(result, mission: str | None):
     if result.trademark:
         match_count = len(result.trademark.matches)
         if match_count == 0:
-            console.print(f"\n[bold]Similar Trademarks:[/bold] [green]None found[/green]")
+            console.print("\n[bold]Similar Trademarks:[/bold] [green]None found[/green]")
         else:
             console.print(f"\n[bold]Similar Trademarks:[/bold] {match_count} found")
 
@@ -92,12 +228,12 @@ def _print_result(result, mission: str | None):
     # International
     issues = [lang for lang, data in result.international.items() if data.get("has_issue")]
     if issues:
-        console.print(f"\n[bold yellow]International Issues:[/bold yellow]")
+        console.print("\n[bold yellow]International Issues:[/bold yellow]")
         for lang in issues:
             meaning = result.international[lang].get("meaning", "unknown issue")
             console.print(f"  {lang}: {meaning}")
     else:
-        console.print(f"\n[bold green]International Check:[/bold green] No issues found")
+        console.print("\n[bold green]International Check:[/bold green] No issues found")
 
     # Mission alignment
     if mission and result.perception and result.perception.mission_alignment:

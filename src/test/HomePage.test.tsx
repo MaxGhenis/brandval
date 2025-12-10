@@ -22,15 +22,33 @@ describe('HomePage', () => {
     expect(screen.getByText(/Future Success/i)).toBeInTheDocument()
   })
 
-  it('has a brand name input field', () => {
+  it('has mode toggle buttons', () => {
     renderHomePage()
-    const input = screen.getByPlaceholderText(/Enter a brand name/i)
-    expect(input).toBeInTheDocument()
+    const modeToggle = document.querySelector('.mode-toggle')
+    expect(modeToggle).toBeInTheDocument()
+    expect(screen.getAllByText('Find Names').length).toBeGreaterThan(0)
+    expect(screen.getByText('Evaluate a Name')).toBeInTheDocument()
   })
 
-  it('allows typing in the brand name input', () => {
+  it('shows workflow form by default (find mode)', () => {
     renderHomePage()
+    expect(screen.getByPlaceholderText(/Describe your project/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Your name ideas/i)).toBeInTheDocument()
+  })
+
+  it('allows typing in the project description', () => {
+    renderHomePage()
+    const textarea = screen.getByPlaceholderText(/Describe your project/i) as HTMLTextAreaElement
+    fireEvent.change(textarea, { target: { value: 'A SaaS tool for tracking carbon emissions' } })
+    expect(textarea.value).toBe('A SaaS tool for tracking carbon emissions')
+  })
+
+  it('switches to evaluate mode and shows brand name input', () => {
+    renderHomePage()
+    const evaluateBtn = screen.getByText('Evaluate a Name')
+    fireEvent.click(evaluateBtn)
     const input = screen.getByPlaceholderText(/Enter a brand name/i) as HTMLInputElement
+    expect(input).toBeInTheDocument()
     fireEvent.change(input, { target: { value: 'TestBrand' } })
     expect(input.value).toBe('TestBrand')
   })

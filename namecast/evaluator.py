@@ -563,3 +563,179 @@ Only include companies with similarity_score > 0.4. Respond ONLY with valid JSON
             return 60
         else:
             return 85
+
+    def quick_domain_check(self, name: str) -> dict[str, bool]:
+        """Fast domain check - just .com and .io for filtering."""
+        result = {}
+        name_lower = name.lower()
+        for tld in [".com", ".io"]:
+            domain = f"{name_lower}{tld}"
+            info = whois_lookup(domain)
+            result[tld] = info is None
+        return result
+
+
+@dataclass
+class NameCandidate:
+    """A name candidate with its filtering status."""
+    name: str
+    source: str  # "user" or "generated"
+    domains_available: dict[str, bool] = field(default_factory=dict)
+    passed_domain_filter: bool = False
+    evaluation: Optional[EvaluationResult] = None
+    rejection_reason: Optional[str] = None
+
+
+@dataclass
+class WorkflowResult:
+    """Result of the full naming workflow."""
+    project_description: str
+    all_candidates: list[NameCandidate]
+    viable_candidates: list[NameCandidate]  # Passed domain filter
+    evaluated_candidates: list[NameCandidate]  # Full evaluation complete
+    recommended: Optional[NameCandidate] = None
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), indent=2, default=str)
+
+
+class NamecastWorkflow:
+    """Smart workflow: generate + filter + evaluate names."""
+
+    def __init__(self):
+        self.evaluator = BrandEvaluator()
+
+    def run(
+        self,
+        project_description: str,
+        user_name_ideas: Optional[list[str]] = None,
+        generate_count: int = 10,
+        max_to_evaluate: int = 5,
+    ) -> WorkflowResult:
+        """Run the full naming workflow.
+
+        Args:
+            project_description: Description of the project/company/product
+            user_name_ideas: Optional list of name ideas from the user
+            generate_count: How many AI names to generate
+            max_to_evaluate: Max candidates to run full evaluation on
+
+        Returns:
+            WorkflowResult with all candidates and evaluations
+        """
+        all_candidates: list[NameCandidate] = []
+
+        # Step 1: Add user's ideas
+        if user_name_ideas:
+            for name in user_name_ideas:
+                all_candidates.append(NameCandidate(
+                    name=name.strip(),
+                    source="user"
+                ))
+
+        # Step 2: Generate additional names via AI
+        generated_names = self._generate_names(project_description, generate_count)
+        for name in generated_names:
+            # Don't duplicate user's ideas
+            if not any(c.name.lower() == name.lower() for c in all_candidates):
+                all_candidates.append(NameCandidate(
+                    name=name,
+                    source="generated"
+                ))
+
+        # Step 3: Quick domain filter - check .com and .io
+        viable_candidates: list[NameCandidate] = []
+        for candidate in all_candidates:
+            domains = self.evaluator.quick_domain_check(candidate.name)
+            candidate.domains_available = domains
+
+            # Must have at least one key domain available
+            if domains.get(".com") or domains.get(".io"):
+                candidate.passed_domain_filter = True
+                viable_candidates.append(candidate)
+            else:
+                candidate.rejection_reason = "No .com or .io domain available"
+
+        # Step 4: Full evaluation on top viable candidates
+        # Sort by user ideas first, then by domain availability
+        viable_candidates.sort(key=lambda c: (
+            0 if c.source == "user" else 1,
+            0 if c.domains_available.get(".com") else 1
+        ))
+
+        evaluated_candidates: list[NameCandidate] = []
+        for candidate in viable_candidates[:max_to_evaluate]:
+            try:
+                candidate.evaluation = self.evaluator.evaluate(
+                    candidate.name,
+                    mission=project_description
+                )
+                evaluated_candidates.append(candidate)
+            except Exception as e:
+                candidate.rejection_reason = f"Evaluation failed: {e}"
+
+        # Step 5: Find recommendation (highest overall score)
+        recommended = None
+        if evaluated_candidates:
+            recommended = max(
+                evaluated_candidates,
+                key=lambda c: c.evaluation.overall_score if c.evaluation else 0
+            )
+
+        return WorkflowResult(
+            project_description=project_description,
+            all_candidates=all_candidates,
+            viable_candidates=viable_candidates,
+            evaluated_candidates=evaluated_candidates,
+            recommended=recommended,
+        )
+
+    def _generate_names(self, project_description: str, count: int) -> list[str]:
+        """Generate name ideas using AI."""
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            return []
+
+        try:
+            from anthropic import Anthropic
+            client = Anthropic()
+
+            response = client.messages.create(
+                model="claude-sonnet-4-20250514",
+                max_tokens=1024,
+                messages=[{
+                    "role": "user",
+                    "content": f"""Generate {count} brand name ideas for this project:
+
+{project_description}
+
+Requirements for good brand names:
+- Short (1-2 words, ideally 6-10 characters)
+- Easy to spell and pronounce
+- Memorable and distinctive
+- Available as a domain (.com or .io preferred)
+- No negative connotations in major languages
+- Evokes the right associations for the product/industry
+
+Respond with ONLY a JSON array of names, no explanation:
+["Name1", "Name2", ...]"""
+                }]
+            )
+
+            # Parse JSON from response
+            text = response.content[0].text.strip()
+            # Handle markdown code blocks
+            if text.startswith("```"):
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+                text = text.strip()
+
+            names = json.loads(text)
+            return [n.strip() for n in names if isinstance(n, str)]
+
+        except Exception as e:
+            print(f"Name generation failed: {e}")
+            return []

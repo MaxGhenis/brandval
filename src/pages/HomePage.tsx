@@ -19,11 +19,41 @@ interface EvaluationResult {
   perception: { evokes: string; industry_association: string[]; memorability: string; mission_alignment?: number }
 }
 
+interface NameCandidate {
+  name: string
+  source: 'user' | 'generated'
+  domains_available: Record<string, boolean>
+  passed_domain_filter: boolean
+  rejection_reason: string | null
+  evaluation: EvaluationResult | null
+}
+
+interface WorkflowResult {
+  project_description: string
+  all_candidates: NameCandidate[]
+  viable_count: number
+  evaluated_count: number
+  recommended: {
+    name: string
+    source: string
+    score: number
+    evaluation: EvaluationResult | null
+  } | null
+}
+
+type Mode = 'evaluate' | 'find'
+
 export default function HomePage() {
+  const [mode, setMode] = useState<Mode>('find')
   const [brandName, setBrandName] = useState('')
   const [result, setResult] = useState<EvaluationResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Workflow state
+  const [projectDescription, setProjectDescription] = useState('')
+  const [nameIdeas, setNameIdeas] = useState('')
+  const [workflowResult, setWorkflowResult] = useState<WorkflowResult | null>(null)
 
   const handleEvaluate = async () => {
     if (!brandName.trim()) return
@@ -53,6 +83,43 @@ export default function HomePage() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleEvaluate()
+  }
+
+  const handleWorkflow = async () => {
+    if (!projectDescription.trim()) return
+    setIsLoading(true)
+    setError(null)
+    setWorkflowResult(null)
+
+    try {
+      const nameIdeasList = nameIdeas
+        .split(',')
+        .map(n => n.trim())
+        .filter(n => n.length > 0)
+
+      const response = await fetch(`${API_URL}/workflow`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_description: projectDescription,
+          name_ideas: nameIdeasList.length > 0 ? nameIdeasList : null,
+          generate_count: 10,
+          max_to_evaluate: 5,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Workflow failed')
+      }
+
+      const data = await response.json()
+      setWorkflowResult(data)
+    } catch (err) {
+      setError('Could not connect to API. Make sure the server is running: uvicorn namecast.api:app --reload')
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Calculate score ring offset (circumference = 2 * PI * 22 ≈ 138.2)
@@ -97,31 +164,85 @@ export default function HomePage() {
       <section className="demo" id="demo">
         <div className="demo-container">
           <div className="demo-header">
-            <h2>Evaluate a Brand Name</h2>
-            <p>Enter any name to see its full evaluation scorecard</p>
+            <h2>{mode === 'find' ? 'Find Your Perfect Name' : 'Evaluate a Brand Name'}</h2>
+            <p>{mode === 'find'
+              ? 'Describe your project and let AI generate and evaluate names for you'
+              : 'Enter any name to see its full evaluation scorecard'}</p>
           </div>
 
-          <div className="demo-input-group">
-            <input
-              type="text"
-              value={brandName}
-              onChange={(e) => {
-                setBrandName(e.target.value)
-                setResult(null)
-                setError(null)
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter a brand name..."
-              className="demo-input"
-            />
+          {/* Mode Toggle */}
+          <div className="mode-toggle">
             <button
-              onClick={handleEvaluate}
-              className="demo-button"
-              disabled={isLoading || !brandName.trim()}
+              className={`mode-btn ${mode === 'find' ? 'active' : ''}`}
+              onClick={() => { setMode('find'); setResult(null); setError(null); }}
             >
-              {isLoading ? 'Analyzing...' : 'Evaluate'}
+              Find Names
+            </button>
+            <button
+              className={`mode-btn ${mode === 'evaluate' ? 'active' : ''}`}
+              onClick={() => { setMode('evaluate'); setWorkflowResult(null); setError(null); }}
+            >
+              Evaluate a Name
             </button>
           </div>
+
+          {mode === 'find' ? (
+            /* Workflow Mode */
+            <div className="workflow-form">
+              <textarea
+                value={projectDescription}
+                onChange={(e) => {
+                  setProjectDescription(e.target.value)
+                  setWorkflowResult(null)
+                  setError(null)
+                }}
+                placeholder="Describe your project, company, or product... (e.g., 'A SaaS tool for tracking carbon emissions for small businesses')"
+                className="demo-textarea"
+                rows={3}
+              />
+              <input
+                type="text"
+                value={nameIdeas}
+                onChange={(e) => {
+                  setNameIdeas(e.target.value)
+                  setWorkflowResult(null)
+                  setError(null)
+                }}
+                placeholder="Your name ideas (optional, comma-separated)..."
+                className="demo-input"
+              />
+              <button
+                onClick={handleWorkflow}
+                className="demo-button full-width"
+                disabled={isLoading || !projectDescription.trim()}
+              >
+                {isLoading ? 'Generating & Evaluating...' : 'Find Names'}
+              </button>
+            </div>
+          ) : (
+            /* Single Name Mode */
+            <div className="demo-input-group">
+              <input
+                type="text"
+                value={brandName}
+                onChange={(e) => {
+                  setBrandName(e.target.value)
+                  setResult(null)
+                  setError(null)
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter a brand name..."
+                className="demo-input"
+              />
+              <button
+                onClick={handleEvaluate}
+                className="demo-button"
+                disabled={isLoading || !brandName.trim()}
+              >
+                {isLoading ? 'Analyzing...' : 'Evaluate'}
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="eval-error">
@@ -129,7 +250,105 @@ export default function HomePage() {
             </div>
           )}
 
-          {result && (
+          {/* Workflow Results */}
+          {workflowResult && (
+            <div className="workflow-results">
+              {/* Summary */}
+              <div className="workflow-summary">
+                <span className="summary-stat">
+                  <strong>{workflowResult.all_candidates.length}</strong> candidates
+                </span>
+                <span className="summary-arrow">→</span>
+                <span className="summary-stat">
+                  <strong>{workflowResult.viable_count}</strong> with domains
+                </span>
+                <span className="summary-arrow">→</span>
+                <span className="summary-stat">
+                  <strong>{workflowResult.evaluated_count}</strong> evaluated
+                </span>
+              </div>
+
+              {/* Recommendation */}
+              {workflowResult.recommended && (
+                <div className="recommendation-card">
+                  <div className="rec-badge">Recommended</div>
+                  <div className="rec-name">{workflowResult.recommended.name}</div>
+                  <div className="rec-score">
+                    Score: <strong>{Math.round(workflowResult.recommended.score)}</strong>/100
+                  </div>
+                  <div className="rec-source">
+                    Source: {workflowResult.recommended.source === 'user' ? 'Your idea' : 'AI generated'}
+                  </div>
+                </div>
+              )}
+
+              {/* Candidates Table */}
+              <div className="candidates-table">
+                <h4>All Candidates</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Source</th>
+                      <th>.com</th>
+                      <th>.io</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workflowResult.all_candidates
+                      .sort((a, b) => {
+                        // Sort by: passed filter first, then by score
+                        if (a.passed_domain_filter !== b.passed_domain_filter) {
+                          return a.passed_domain_filter ? -1 : 1
+                        }
+                        const scoreA = a.evaluation?.overall_score ?? 0
+                        const scoreB = b.evaluation?.overall_score ?? 0
+                        return scoreB - scoreA
+                      })
+                      .map((candidate, i) => (
+                        <tr key={i} className={!candidate.passed_domain_filter ? 'filtered-out' : ''}>
+                          <td className="candidate-name">
+                            {workflowResult.recommended?.name === candidate.name && (
+                              <span className="star-badge">★</span>
+                            )}
+                            {candidate.name}
+                          </td>
+                          <td>{candidate.source === 'user' ? 'You' : 'AI'}</td>
+                          <td className={candidate.domains_available['.com'] ? 'available' : 'unavailable'}>
+                            {candidate.domains_available['.com'] ? '✓' : '✗'}
+                          </td>
+                          <td className={candidate.domains_available['.io'] ? 'available' : 'unavailable'}>
+                            {candidate.domains_available['.io'] ? '✓' : '✗'}
+                          </td>
+                          <td>
+                            {candidate.evaluation
+                              ? Math.round(candidate.evaluation.overall_score)
+                              : '-'}
+                          </td>
+                          <td>
+                            {candidate.evaluation
+                              ? 'Evaluated'
+                              : candidate.passed_domain_filter
+                                ? 'Not evaluated'
+                                : 'No domain'}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="eval-disclaimer">
+                This tool provides general information only and does not constitute legal advice.
+                Consult a trademark attorney before finalizing your brand name.
+              </div>
+            </div>
+          )}
+
+          {/* Single Name Results */}
+          {result && mode === 'evaluate' && (
             <div className="eval-results">
               <div className="eval-header">
                 <span className="eval-name">{result.name}</span>

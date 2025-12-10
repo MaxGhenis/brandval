@@ -13,8 +13,9 @@ describe('App', () => {
     expect(screen.getByText(/Forecast Your Name/i)).toBeInTheDocument()
   })
 
-  it('renders the demo input', () => {
+  it('renders the demo section', () => {
     render(<App />)
-    expect(screen.getByPlaceholderText(/Enter a brand name/i)).toBeInTheDocument()
+    // Default mode is 'find' which shows project description textarea
+    expect(screen.getByPlaceholderText(/Describe your project/i)).toBeInTheDocument()
   })
 })

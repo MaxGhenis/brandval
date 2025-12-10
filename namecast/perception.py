@@ -1,6 +1,5 @@
 """AI-powered brand perception forecasting with multiple personas."""
 
-import os
 import json
 from dataclasses import dataclass
 from typing import Optional
@@ -192,7 +191,7 @@ Synthesize into a single 1-2 sentence summary of what this name evokes. Be speci
             messages=[{"role": "user", "content": synthesis_prompt}],
         )
         evokes_summary = synthesis.content[0].text.strip()
-    except:
+    except Exception:
         evokes_summary = all_evokes[0] if all_evokes else "professional, modern"
 
     # Get unique industries
@@ -246,5 +245,5 @@ Respond ONLY with valid JSON."""
             messages=[{"role": "user", "content": prompt}],
         )
         return json.loads(response.content[0].text)
-    except:
+    except Exception:
         return {"score": 5.0, "explanation": "Unable to evaluate alignment."}
