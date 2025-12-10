@@ -31,6 +31,15 @@ class TrademarkResult:
 
 
 @dataclass
+class SocialHandleResult:
+    """Result for a single social platform."""
+    platform: str
+    exact_available: bool  # Is @name available?
+    best_alternative: Optional[str] = None  # Best available alternative handle
+    alternatives_checked: list[str] = field(default_factory=list)  # All alternatives checked
+
+
+@dataclass
 class PronunciationResult:
     """Result of pronunciation analysis."""
     score: float
@@ -60,7 +69,7 @@ class EvaluationResult:
     similar_companies_score: float = 100.0
 
     domains: dict[str, bool] = field(default_factory=dict)
-    social: dict[str, bool] = field(default_factory=dict)
+    social: dict[str, SocialHandleResult] = field(default_factory=dict)
     trademark: Optional[TrademarkResult] = None
     pronunciation: Optional[PronunciationResult] = None
     international: dict[str, dict] = field(default_factory=dict)
@@ -93,12 +102,18 @@ class EvaluationResult:
         lines.extend([
             "",
             "### Social Handles",
-            "| Platform | Status |",
-            "|----------|--------|",
+            "| Platform | @exact | Best Alternative |",
+            "|----------|--------|------------------|",
         ])
-        for platform, available in self.social.items():
-            status = "Available" if available else "Taken"
-            lines.append(f"| {platform} | {status} |")
+        for platform, result in self.social.items():
+            if isinstance(result, SocialHandleResult):
+                exact = "✓" if result.exact_available else "✗"
+                alt = result.best_alternative or "-"
+                lines.append(f"| {platform} | {exact} | {alt} |")
+            else:
+                # Backwards compat with old bool format
+                status = "✓" if result else "✗"
+                lines.append(f"| {platform} | {status} | - |")
 
         if self.trademark:
             lines.extend([
@@ -146,10 +161,22 @@ class BrandEvaluator:
     def __init__(self):
         pass
 
-    def evaluate(self, name: str, mission: Optional[str] = None) -> EvaluationResult:
-        """Run full evaluation on a brand name."""
+    def evaluate(
+        self,
+        name: str,
+        mission: Optional[str] = None,
+        planned_domain: Optional[str] = None,
+    ) -> EvaluationResult:
+        """Run full evaluation on a brand name.
+
+        Args:
+            name: The brand name to evaluate
+            mission: Optional company mission for alignment scoring
+            planned_domain: The domain you plan to use (e.g., "farness.ai") -
+                           used to suggest matching social handle alternatives
+        """
         domains = self.check_domains(name)
-        social = self.check_social(name)
+        social = self.check_social(name, planned_domain)
         trademark = self.check_trademark(name)
         pronunciation = self.analyze_pronunciation(name)
         international = self.check_international(name)
@@ -202,11 +229,75 @@ class BrandEvaluator:
             result[tld] = info is None  # Available if no WHOIS record
         return result
 
-    def check_social(self, name: str) -> dict[str, bool]:
-        """Check social media handle availability."""
-        # TODO: Implement actual social media checks
-        # For now, return placeholder
-        return {platform: True for platform in self.DEFAULT_PLATFORMS}
+    def check_social(self, name: str, planned_domain: Optional[str] = None) -> dict[str, SocialHandleResult]:
+        """Check social media handle availability with alternatives.
+
+        Args:
+            name: The brand name to check
+            planned_domain: The domain you plan to use (e.g., "farness.ai") -
+                           used to suggest matching alternatives like @farnessai
+        """
+        results = {}
+        name_lower = name.lower()
+
+        # Generate alternative handles based on name and planned domain
+        alternatives = self._generate_handle_alternatives(name_lower, planned_domain)
+
+        for platform in self.DEFAULT_PLATFORMS:
+            # TODO: Implement actual availability checks via API/scraping
+            # For now, return the alternatives we would check
+            results[platform] = SocialHandleResult(
+                platform=platform,
+                exact_available=True,  # Placeholder - would check @{name}
+                best_alternative=alternatives[0] if alternatives else None,
+                alternatives_checked=[name_lower] + alternatives,
+            )
+
+        return results
+
+    def _generate_handle_alternatives(self, name: str, planned_domain: Optional[str] = None) -> list[str]:
+        """Generate alternative handles to check if exact name is taken."""
+        alternatives = []
+
+        # If planned domain provided, derive alternatives from it
+        # e.g., farness.ai -> farnessai, farness_ai
+        if planned_domain:
+            # Remove protocol if present
+            domain = planned_domain.replace("https://", "").replace("http://", "")
+            # Get TLD
+            if "." in domain:
+                base, tld = domain.rsplit(".", 1)
+                alternatives.append(f"{base}{tld}")  # farnessai
+                alternatives.append(f"{base}_{tld}")  # farness_ai
+                alternatives.append(f"{base}.{tld}")  # farness.ai (some platforms allow dots)
+                alternatives.append(f"get{base}")  # getfarness
+                alternatives.append(f"{base}hq")  # farnesshq
+                alternatives.append(f"{base}app")  # farnessapp
+
+        # Common suffix alternatives
+        alternatives.extend([
+            f"{name}hq",      # namehq
+            f"{name}app",    # nameapp
+            f"get{name}",    # getname
+            f"try{name}",    # tryname
+            f"use{name}",    # usename
+            f"{name}_",      # name_
+            f"_{name}",      # _name
+            f"{name}io",     # nameio (if planning .io)
+            f"{name}ai",     # nameai (if planning .ai)
+            f"the{name}",    # thename
+            f"{name}official",  # nameofficial
+        ])
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique = []
+        for alt in alternatives:
+            if alt not in seen and alt != name:
+                seen.add(alt)
+                unique.append(alt)
+
+        return unique[:10]  # Top 10 alternatives
 
     def check_trademark(self, name: str) -> TrademarkResult:
         """Search for trademark conflicts."""
@@ -420,12 +511,30 @@ Only include companies with similarity_score > 0.4. Respond ONLY with valid JSON
             score += (available_others / len(other_tlds)) * 50
         return score
 
-    def _calc_social_score(self, social: dict[str, bool]) -> float:
-        """Calculate social handle availability score (0-100)."""
+    def _calc_social_score(self, social: dict[str, SocialHandleResult]) -> float:
+        """Calculate social handle availability score (0-100).
+
+        Scoring:
+        - Exact handle available: 100% for that platform
+        - Alternative available: 70% for that platform
+        - Nothing available: 0% for that platform
+        """
         if not social:
             return 0
-        available = sum(1 for v in social.values() if v)
-        return (available / len(social)) * 100
+
+        total_score = 0
+        for result in social.values():
+            if isinstance(result, SocialHandleResult):
+                if result.exact_available:
+                    total_score += 100
+                elif result.best_alternative:
+                    total_score += 70  # Alternative is decent but not perfect
+                # else: 0 points
+            else:
+                # Backwards compat with old bool format
+                total_score += 100 if result else 0
+
+        return total_score / len(social)
 
     def _calc_trademark_score(self, trademark: TrademarkResult) -> float:
         """Calculate trademark safety score (0-100)."""
