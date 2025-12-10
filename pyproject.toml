@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "brandeval"
+name = "brandval"
 version = "0.1.0"
 description = "AI-powered brand name evaluation tool"
 readme = "README.md"
@@ -39,12 +39,12 @@ dev = [
 ]
 
 [project.scripts]
-brandeval = "brandeval.cli:main"
+brandval = "brandval.cli:main"
 
 [tool.pytest.ini_options]
-testpaths = ["brandeval/tests"]
+testpaths = ["brandval/tests"]
 asyncio_mode = "auto"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["brandeval*"]
+include = ["brandval*"]

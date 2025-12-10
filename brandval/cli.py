@@ -6,7 +6,7 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
 
-from brandeval.evaluator import BrandEvaluator
+from brandval.evaluator import BrandEvaluator
 
 
 console = Console()
@@ -22,11 +22,11 @@ def main(names: tuple[str, ...], mission: str | None, output_json: bool, compare
 
     Examples:
 
-        brandeval Acme
+        brandval Acme
 
-        brandeval Acme --mission "Industrial supply company"
+        brandval Acme --mission "Industrial supply company"
 
-        brandeval --compare Acme Globex Initech
+        brandval --compare Acme Globex Initech
     """
     evaluator = BrandEvaluator()
 

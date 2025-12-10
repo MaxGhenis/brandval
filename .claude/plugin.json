@@ -1,8 +1,8 @@
 {
-  "name": "brandeval",
+  "name": "brandval",
   "version": "0.1.0",
   "description": "AI-powered brand name evaluation - check domains, social handles, trademarks, pronunciation, and brand perception",
-  "homepage": "https://brandeval.ai",
+  "homepage": "https://brandval.ai",
   "skills": [
     {
       "name": "evaluate-brand",

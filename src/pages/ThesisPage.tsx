@@ -43,7 +43,7 @@ export default function ThesisPage() {
             <path d="M8 16h16M16 8v16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             <circle cx="16" cy="16" r="4" fill="currentColor"/>
           </svg>
-          brandeval
+          brandval
         </a>
       </nav>
 
@@ -70,7 +70,7 @@ export default function ThesisPage() {
           We're building the unified scorecard.
         </p>
         <p className="thesis-meta">
-          December 2024 · BrandEval
+          December 2024 · BrandVal
         </p>
       </header>
 
@@ -138,7 +138,7 @@ export default function ThesisPage() {
                   <th>Namify</th>
                   <th>Squadhelp</th>
                   <th>KnowEm</th>
-                  <th className="highlight-col">BrandEval</th>
+                  <th className="highlight-col">BrandVal</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,7 +283,7 @@ export default function ThesisPage() {
           <h2>The Product</h2>
 
           <p>
-            BrandEval is a unified brand name evaluation platform. Enter a name,
+            BrandVal is a unified brand name evaluation platform. Enter a name,
             get a comprehensive scorecard covering everything from domain availability
             to AI-powered perception analysis.
           </p>
@@ -388,10 +388,10 @@ export default function ThesisPage() {
       {/* CTA */}
       <section className="thesis-cta">
         <h2>Ready to Evaluate?</h2>
-        <p>Try BrandEval free. No signup required for your first evaluation.</p>
+        <p>Try BrandVal free. No signup required for your first evaluation.</p>
         <div className="cta-buttons">
           <a href="/" className="btn-primary">Try It Free</a>
-          <a href="mailto:hello@brandeval.ai" className="btn-secondary">Get in Touch</a>
+          <a href="mailto:hello@brandval.ai" className="btn-secondary">Get in Touch</a>
         </div>
       </section>
     </div>

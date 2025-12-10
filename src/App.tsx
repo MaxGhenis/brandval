@@ -18,12 +18,12 @@ function App() {
                   <path d="M8 16h16M16 8v16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   <circle cx="16" cy="16" r="4" fill="currentColor"/>
                 </svg>
-                brandeval
+                brandval
               </a>
               <div className="nav-links">
                 <a href="/thesis">Thesis</a>
                 <a href="https://github.com">GitHub</a>
-                <a href="mailto:hello@brandeval.ai">Contact</a>
+                <a href="mailto:hello@brandval.ai">Contact</a>
               </div>
             </div>
           </nav>

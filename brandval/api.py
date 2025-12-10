@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from brandeval.evaluator import BrandEvaluator
+from brandval.evaluator import BrandEvaluator
 
 
 app = FastAPI(
@@ -37,7 +37,7 @@ class CompareRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "brandeval-api"}
+    return {"status": "ok", "service": "brandval-api"}
 
 
 @app.post("/evaluate")

@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from brandeval.evaluator import BrandEvaluator, EvaluationResult
+from brandval.evaluator import BrandEvaluator, EvaluationResult
 
 
 class TestBrandEvaluator:
@@ -63,7 +63,7 @@ class TestDomainChecker:
         for tld, available in result.items():
             assert isinstance(available, bool), f"{tld} should be bool, got {type(available)}"
 
-    @patch("brandeval.evaluator.whois_lookup")
+    @patch("brandval.evaluator.whois_lookup")
     def test_domain_available_when_not_registered(self, mock_whois):
         """Domain should be available when WHOIS returns no registration."""
         mock_whois.return_value = None  # No registration found
@@ -71,7 +71,7 @@ class TestDomainChecker:
         result = evaluator.check_domains("xyzuniquename12345")
         assert result[".com"] is True
 
-    @patch("brandeval.evaluator.whois_lookup")
+    @patch("brandval.evaluator.whois_lookup")
     def test_domain_unavailable_when_registered(self, mock_whois):
         """Domain should be unavailable when WHOIS returns registration."""
         mock_whois.return_value = {"domain_name": "google.com", "creation_date": "1997-09-15"}
@@ -248,7 +248,7 @@ class TestCLI:
 
     def test_cli_with_single_name(self):
         """CLI should accept a single brand name."""
-        from brandeval.cli import main
+        from brandval.cli import main
         from click.testing import CliRunner
         runner = CliRunner()
         result = runner.invoke(main, ["Acme"])
@@ -257,7 +257,7 @@ class TestCLI:
 
     def test_cli_with_mission_flag(self):
         """CLI should accept --mission flag."""
-        from brandeval.cli import main
+        from brandval.cli import main
         from click.testing import CliRunner
         runner = CliRunner()
         result = runner.invoke(main, ["Luminary", "--mission", "Education platform"])
@@ -267,7 +267,7 @@ class TestCLI:
     def test_cli_json_output(self):
         """CLI should support --json flag for JSON output."""
         import json
-        from brandeval.cli import main
+        from brandval.cli import main
         from click.testing import CliRunner
         runner = CliRunner()
         result = runner.invoke(main, ["Acme", "--json"])
@@ -277,7 +277,7 @@ class TestCLI:
 
     def test_cli_compare_multiple_names(self):
         """CLI should support comparing multiple names."""
-        from brandeval.cli import main
+        from brandval.cli import main
         from click.testing import CliRunner
         runner = CliRunner()
         result = runner.invoke(main, ["--compare", "Acme", "Globex", "Initech"])
