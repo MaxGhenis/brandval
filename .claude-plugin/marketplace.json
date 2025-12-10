@@ -1,0 +1,14 @@
+{
+  "name": "brandval",
+  "owner": {
+    "name": "maxghenis"
+  },
+  "plugins": [
+    {
+      "name": "brandval",
+      "source": "./",
+      "description": "AI-powered brand name evaluation",
+      "version": "0.1.0"
+    }
+  ]
+}
