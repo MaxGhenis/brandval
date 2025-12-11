@@ -40,20 +40,38 @@ Examples:
 - "Cosilico" for economy simulation = 9/10 (abstract, allows growth)
 - "Amazon" = 10/10 (completely abstract)
 
-### 5. Calculate Scores (0-100)
-- Domain: 30 pts (.com = 30, .io only = 20)
-- Persona perception: 30 pts (avg of memorability + professionalism, scaled)
+### 5. Pronunciation Analysis (Optional)
+
+**Check if phonetic analysis is available and run for each name:**
+```bash
+python -c "from big_phoney import BigPhoney" 2>/dev/null && python -m namecast.phonetic "{name}" || echo "SKIP_PHONETIC"
+```
+
+If big-phoney is installed, this returns JSON with syllables, phonetic representation (ARPAbet), sounds_like (confusion risk), and difficulty rating.
+
+If output is "SKIP_PHONETIC", skip pronunciation analysis (user hasn't installed `pip install big-phoney`).
+
+### 6. Calculate Scores (0-100)
+- Domain: 25 pts (.com = 25, .io only = 15)
+- Persona perception: 25 pts (avg of memorability + professionalism, scaled)
 - **Brand scope: 20 pts** (penalize names that box in the company)
-- Linguistic: 20 pts (pronunciation ease, spelling, uniqueness)
+- **Pronunciation: 15 pts** (if available - penalize "sounds like" issues, e.g., "modelsoc" → "model sock")
+- Linguistic: 15 pts (spelling ease, uniqueness)
 
-### 6. Present Comparison Table
+If pronunciation analysis unavailable, redistribute those 15 pts to other categories.
 
-| Name | .com | .io | GitHub | Perception | Scope | Score |
-|------|------|-----|--------|------------|-------|-------|
+### 7. Present Comparison Table
+
+| Name | .com | .io | GitHub | Perception | Scope | Pronunciation | Score |
+|------|------|-----|--------|------------|-------|---------------|-------|
 
 **Brand Scope Breakdown:**
 | Name | Narrowness | Mission Fit | Scope Score |
 |------|------------|-------------|-------------|
+
+**Pronunciation Breakdown (if available):**
+| Name | Syllables | Phonetic | Sounds Like | Difficulty | Score |
+|------|-----------|----------|-------------|------------|-------|
 
 **Winner:** [Name] with score X/100
 

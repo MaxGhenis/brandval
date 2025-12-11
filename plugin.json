@@ -1,7 +1,7 @@
 {
   "name": "namecast",
-  "version": "0.5.0",
-  "description": "AI-powered brand name oracle - evaluate names with domain checks, persona perception, brand scope analysis (penalizes narrow names), and tagline generation",
+  "version": "0.6.0",
+  "description": "AI-powered brand name oracle - evaluate names with domain checks, persona perception, brand scope analysis, phonetic/pronunciation analysis (via big-phoney neural net), and tagline generation",
   "author": {
     "name": "Max Ghenis"
   }

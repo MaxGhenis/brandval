@@ -63,11 +63,25 @@ For each company found, use Bash `curl -sI --connect-timeout 5 {their_website}` 
 
 Only count active, same-market competitors as brand risks.
 
-### 5. Pronunciation Analysis
-Assess:
-- Syllable count
-- Spelling difficulty (easy/medium/hard)
-- Phonetic clarity (would people spell it correctly after hearing it?)
+### 5. Pronunciation Analysis (Optional)
+
+**Check if phonetic analysis is available:**
+```bash
+python -c "from big_phoney import BigPhoney" 2>/dev/null && python -m namecast.phonetic "{name}" || echo "SKIP_PHONETIC"
+```
+
+If big-phoney is installed, this uses a neural network to predict pronunciation for any word (including made-up brand names) and returns JSON with:
+- `syllables`: syllable count
+- `phonetic`: ARPAbet phonetic representation (e.g., "M AA1 D IH0 L S AH0 K" for "modelsoc" = "model sock")
+- `sounds_like`: similar-sounding words (confusion risk)
+- `difficulty`: easy/medium/hard
+
+If output is "SKIP_PHONETIC", skip this section (user hasn't installed `pip install big-phoney`).
+
+Use these results to assess:
+- Syllable count (1-2 ideal, 3 okay, 4+ harder)
+- Phonetic clarity (check sounds_like for confusion risks like "model sock")
+- Ambiguity (spelling patterns that confuse readers)
 
 ### 6. International Check
 Consider if the name has problematic meanings in:
@@ -110,7 +124,7 @@ Rate the name-tagline pairing potential (1-10): How well can a tagline "rescue" 
 **Other scoring:**
 - Social handles: 5 pts
 - Similar companies: 15 pts (only deduct for 🔴 active same-market competitors)
-- Pronunciation: 10 pts
+- Pronunciation: 10 pts (skip if big-phoney not installed, redistribute to other categories)
 - International: 10 pts
 - Persona perception: 20 pts
 - **Brand scope: 15 pts** (penalize narrow names)
