@@ -151,7 +151,7 @@ Respond ONLY with valid JSON array."""
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-opus-4-5-20251101",
             max_tokens=800,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -233,7 +233,7 @@ Respond ONLY with valid JSON, no other text."""
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-opus-4-5-20251101",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -307,7 +307,7 @@ Synthesize into a single 1-2 sentence summary of what this name evokes. Be speci
 
     try:
         synthesis = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-opus-4-5-20251101",
             max_tokens=150,
             messages=[{"role": "user", "content": synthesis_prompt}],
         )
@@ -363,7 +363,7 @@ Respond ONLY with valid JSON."""
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-opus-4-5-20251101",
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -455,7 +455,7 @@ Respond ONLY with valid JSON."""
 
     try:
         response = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-opus-4-5-20251101",
             max_tokens=600,
             messages=[{"role": "user", "content": prompt}],
         )
