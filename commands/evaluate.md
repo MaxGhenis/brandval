@@ -21,23 +21,24 @@ Based on the mission/description (or infer from the name if not provided), ident
 
 ### 2. Domain Availability (Two-Step Check)
 
-**Step 1: Check if domain is LIVE** (more important than whois)
-Use Bash with `curl -sI --connect-timeout 5 https://{name}.{tld}` for each:
-- {name}.com
-- {name}.io
-- {name}.ai (prioritize for AI/tech products)
-- {name}.co
+**Step 1: Check registration status via WHOIS**
+Use direct whois servers for accurate results:
+- `.ai`: `whois -h whois.nic.ai {name}.ai` → "Domain not found." = available
+- `.io`: `whois -h whois.nic.io {name}.io` → "NOT FOUND" = available
+- `.com`: `whois {name}.com` → "No match" = available
+- `.co`: `whois {name}.co` → "Not found" = available
 
-If curl returns headers (HTTP 200/301/302) → domain has active site
-If curl returns nothing/error → domain is parked or available
-
-**Step 2: For domains with no active site, check whois**
-Use Bash with `whois {name}.{tld} | head -30` to check registration status.
+**Step 2: For registered domains, check if site is LIVE**
+Use Bash with `curl -sI --connect-timeout 5 https://{name}.{tld}`:
+- HTTP headers returned → active site (brand conflict risk)
+- No response/error → parked (potentially acquirable)
 
 **Classify each domain as:**
 - ✓ Available (not registered)
 - ⚠️ Parked (registered but no active site - acquirable)
 - ✗ Active (registered with live website - brand conflict risk)
+
+**Priority for AI products:** Check .ai first - it's the ideal TLD.
 
 ### 3. Social Handle Check
 Use WebFetch to check availability on major platforms:

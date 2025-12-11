@@ -166,11 +166,49 @@ class EvaluationResult:
 
 def whois_lookup(domain: str) -> Optional[dict]:
     """Look up WHOIS info for a domain. Returns None if not registered."""
+    import subprocess
+
+    # Use direct whois servers for accurate results
+    tld = domain.split(".")[-1].lower()
+    whois_servers = {
+        "ai": "whois.nic.ai",
+        "io": "whois.nic.io",
+        "co": "whois.nic.co",
+        "app": "whois.nic.google",
+        "dev": "whois.nic.google",
+        "com": "whois.verisign-grs.com",
+        "net": "whois.verisign-grs.com",
+        "org": "whois.pir.org",
+        "xyz": "whois.nic.xyz",
+        "tech": "whois.nic.tech",
+    }
+
     try:
-        w = whois.whois(domain)
-        if w.domain_name:
-            return {"domain_name": w.domain_name, "creation_date": w.creation_date}
-        return None
+        if tld in whois_servers:
+            # Use direct whois server for better accuracy
+            result = subprocess.run(
+                ["whois", "-h", whois_servers[tld], domain],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            output = result.stdout.lower()
+
+            # Check for "not found" indicators
+            not_found_indicators = ["domain not found", "not found", "no match", "no data found"]
+            if any(indicator in output for indicator in not_found_indicators):
+                return None  # Available
+
+            # If we got domain info, it's registered
+            if "domain name:" in output or "domain:" in output:
+                return {"domain_name": domain, "creation_date": None}
+            return None
+        else:
+            # Fallback to python-whois for other TLDs
+            w = whois.whois(domain)
+            if w.domain_name:
+                return {"domain_name": w.domain_name, "creation_date": w.creation_date}
+            return None
     except Exception:
         return None
 
